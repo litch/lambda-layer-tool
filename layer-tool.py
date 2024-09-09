@@ -104,9 +104,9 @@ def build_layer(layername: str, options: Dict[str, Any]) -> int:
     if not runtime_list:
         print("No runtime specified for layer " + layername)
         return 1
-    for runtime in runtime_list:
-        if not check_runtime(runtime):
-            return 1
+
+    if not check_runtime(runtime_list):
+        return 1
 
     pre_install_cmds: List[str] = options.get('pre_installs', [])
 
@@ -233,20 +233,20 @@ def build_layer(layername: str, options: Dict[str, Any]) -> int:
     return 0
 
 
-def check_runtime(expected_runtime: str) -> bool:
+def check_runtime(expected_runtimes: List[str]) -> bool:
     actual_runtime: str
-    if expected_runtime.startswith("python"):
+    if expected_runtimes[0].startswith("python"):
         actual_runtime = "python{}.{}".format(sys.version_info[0], sys.version_info[1])
-    elif expected_runtime.startswith("node"):
+    elif expected_runtimes[0].startswith("node"):
         node_major_version: str = subprocess.check_output(["node", "--version"]).decode("ascii")
         node_major_version = node_major_version[1:].split('.')[0]
         actual_runtime = "node{}.x".format(node_major_version)
     else:
-        print("Error: unsupported runtime {}".format(expected_runtime))
+        print("Error: unsupported runtime {}".format(expected_runtimes))
         return False
 
-    if actual_runtime != expected_runtime:
-        print("Error: specified runtime {} does not match: {}".format(expected_runtime, actual_runtime))
+    if actual_runtime not in expected_runtimes:
+        print("Error: specified runtime {} does not match: {}".format(expected_runtimes, actual_runtime))
         return False
 
     return True
