@@ -100,12 +100,13 @@ def build_layer(layername: str, options: Dict[str, Any]) -> int:
         return 1
 
     excludes: List[str] = options.get('excludes', [])
-    runtime: str = options.get('runtimes', '')
-    if not runtime:
+    runtime_list: List[str] = options.get('runtimes', [])
+    if not runtime_list:
         print("No runtime specified for layer " + layername)
         return 1
-    if not check_runtime(runtime):
-        return 1
+    for runtime in runtime_list:
+        if not check_runtime(runtime):
+            return 1
 
     pre_install_cmds: List[str] = options.get('pre_installs', [])
 
@@ -123,16 +124,17 @@ def build_layer(layername: str, options: Dict[str, Any]) -> int:
     outfile: str = layername + ".zip"
 
     lambda_dir: str
-    if runtime.startswith("python"):
+    # We're going to assume that all the runtimes are the same "flavor" (either node or python)
+    if runtime_list[0].startswith("python"):
         lambda_dir = os.path.join(tmp_dir_path, "python")
-    elif runtime.startswith("node"):
+    elif runtime_list[0].startswith("node"):
         lambda_dir = os.path.join(tmp_dir_path, "nodejs")
 
     # create a new directory
     # which only contains files relevant to the lambda layer
     os.mkdir(lambda_dir)
 
-    if runtime.startswith('python'):
+    if runtime_list[0].startswith('python'):
         # activate virtualenv
         venv.create(venv_dir, with_pip=True)
 
@@ -163,7 +165,7 @@ def build_layer(layername: str, options: Dict[str, Any]) -> int:
         # move (copy) the installed requirements into the layer path
         os.rename(os.path.join(venv_dir, "lib/"), os.path.join(lambda_dir, "lib/"))
 
-    elif runtime.startswith('node'):
+    elif runtime_list[0].startswith('node'):
         # this ensures pre-install commands work properly
         os.mkdir(node_modules_dir)
 
